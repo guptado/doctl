@@ -85,6 +85,20 @@ func (mr *MockVPCsServiceMockRecorder) Delete(vpcUUID any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockVPCsService)(nil).Delete), vpcUUID)
 }
 
+// DeletePartnerInterconnectAttachment mocks base method.
+func (m *MockVPCsService) DeletePartnerInterconnectAttachment(iaID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeletePartnerInterconnectAttachment", iaID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeletePartnerInterconnectAttachment indicates an expected call of DeletePartnerInterconnectAttachment.
+func (mr *MockVPCsServiceMockRecorder) DeletePartnerInterconnectAttachment(iaID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePartnerInterconnectAttachment", reflect.TypeOf((*MockVPCsService)(nil).DeletePartnerInterconnectAttachment), iaID)
+}
+
 // DeleteVPCPeering mocks base method.
 func (m *MockVPCsService) DeleteVPCPeering(peeringID string) error {
 	m.ctrl.T.Helper()

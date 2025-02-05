@@ -2,7 +2,9 @@ package commands
 
 import (
 	"fmt"
+	"os"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -66,6 +68,11 @@ With the Partner Interconnect Attachments commands, you can get or list, create,
 		aliasOpt("ls"), displayerType(&displayers.PartnerInterconnectAttachment{}))
 	cmdPartnerIAList.Example = `The following example lists the Network Interconnect Attachments on your account : doctl network interconnect-attachment list --format Name,VPCIDs`
 
+	cmdPartnerIADelete := CmdBuilder(cmd, RunPartnerInterconnectAttachmentDelete, "delete <interconnect-attachment-id>",
+		"Deletes a Partner Interconnect Attachment", "Deletes information about a Partner Interconnect Attachment. This is irreversible ", Writer,
+		aliasOpt("g"), displayerType(&displayers.PartnerInterconnectAttachment{}))
+	cmdPartnerIADelete.Example = `The following example deletes a Partner Interconnect Attachment with the ID ` + "`" + `f81d4fae-7dec-11d0-a765-00a0c91e6bf6` + "`" + `: doctl partner interconnect-attachment delete f81d4fae-7dec-11d0-a765-00a0c91e6bf6`
+
 	return cmd
 }
 
@@ -118,4 +125,92 @@ func RunPartnerInterconnectAttachmentList(c *CmdConfig) error {
 
 	item := &displayers.PartnerInterconnectAttachment{PartnerInterconnectAttachments: list}
 	return c.Display(item)
+}
+
+// RunPartnerInterconnectAttachmentDelete deletes an existing Partner Interconnect Attachment by its identifier.
+func RunPartnerInterconnectAttachmentDelete(c *CmdConfig) error {
+
+	if err := ensurePartnerAttachmentType(c); err != nil {
+		return err
+	}
+
+	err := ensureOneArg(c)
+	if err != nil {
+		return err
+	}
+	iaID := c.Args[0]
+
+	force, err := c.Doit.GetBool(c.NS, doctl.ArgForce)
+	if err != nil {
+		return err
+	}
+
+	if force || AskForConfirmDelete("Partner Interconnect Attachment", 1) == nil {
+
+		vpcs := c.VPCs()
+		err := vpcs.DeletePartnerInterconnectAttachment(iaID)
+		if err != nil {
+			return err
+		}
+
+		wait, err := c.Doit.GetBool(c.NS, doctl.ArgCommandWait)
+		if err != nil {
+			return err
+		}
+
+		if wait {
+			notice("Partner Interconnect Attachment is in progress, waiting for Partner Interconnect Attachment to be deleted")
+
+			err := waitForPIA(vpcs, iaID, "DELETED", true)
+			if err != nil {
+				return fmt.Errorf("Partner Interconnect Attachment couldn't be deleted : %v", err)
+			}
+			notice("Partner Interconnect Attachment is successfully deleted")
+		} else {
+			notice("Partner Interconnect Attachment deletion request accepted")
+		}
+
+	} else {
+		return fmt.Errorf("operation aborted")
+	}
+
+	return nil
+}
+
+func waitForPIA(vpcService do.VPCsService, iaID string, wantStatus string, terminateOnNotFound bool) error {
+	const maxAttempts = 360
+	const errStatus = "ERROR"
+	attempts := 0
+	printNewLineSet := false
+
+	for i := 0; i < maxAttempts; i++ {
+		if attempts != 0 {
+			fmt.Fprint(os.Stderr, ".")
+			if !printNewLineSet {
+				printNewLineSet = true
+				defer fmt.Fprintln(os.Stderr)
+			}
+		}
+
+		interconnectAttachment, err := vpcService.GetPartnerInterconnectAttachment(iaID)
+		if err != nil {
+			if terminateOnNotFound && strings.Contains(err.Error(), "not found") {
+				return nil
+			}
+			return err
+		}
+
+		if interconnectAttachment.State == errStatus {
+			return fmt.Errorf("Partner Interconnect Attachment (%s) entered status `%s`", iaID, errStatus)
+		}
+
+		if interconnectAttachment.State == wantStatus {
+			return nil
+		}
+
+		attempts++
+		time.Sleep(5 * time.Second)
+	}
+
+	return fmt.Errorf("timeout waiting for Partner Interconnect Attachment (%s) to become %s", iaID, wantStatus)
 }
