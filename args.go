@@ -525,6 +525,10 @@ const (
 
 	// ArgInterconnectAttachmentType is the type of the Interconnect Attachment e.g. "partner".
 	ArgInterconnectAttachmentType = "type"
+	// ArgPartnerInterconnectAttachmentName is a name of the Partner Interconnect Attachment.
+	ArgPartnerInterconnectAttachmentName = "name"
+	// ArgPartnerInterconnectAttachmentVPCIDs are the IDs of the VPCs which the Partner Interconnect Attachment is connected
+	ArgPartnerInterconnectAttachmentVPCIDs = "vpc-ids"
 
 	// ArgReadWrite indicates a generated token should be read/write.
 	ArgReadWrite = "read-write"

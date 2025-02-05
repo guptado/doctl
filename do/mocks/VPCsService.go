@@ -253,6 +253,21 @@ func (mr *MockVPCsServiceMockRecorder) Update(vpcUUID, vpcr any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockVPCsService)(nil).Update), vpcUUID, vpcr)
 }
 
+// UpdatePartnerInterconnectAttachment mocks base method.
+func (m *MockVPCsService) UpdatePartnerInterconnectAttachment(iaID string, req *godo.PartnerInterconnectAttachmentUpdateRequest) (*do.PartnerInterconnectAttachment, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdatePartnerInterconnectAttachment", iaID, req)
+	ret0, _ := ret[0].(*do.PartnerInterconnectAttachment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdatePartnerInterconnectAttachment indicates an expected call of UpdatePartnerInterconnectAttachment.
+func (mr *MockVPCsServiceMockRecorder) UpdatePartnerInterconnectAttachment(iaID, req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePartnerInterconnectAttachment", reflect.TypeOf((*MockVPCsService)(nil).UpdatePartnerInterconnectAttachment), iaID, req)
+}
+
 // UpdateVPCPeering mocks base method.
 func (m *MockVPCsService) UpdateVPCPeering(peeringID string, req *godo.VPCPeeringUpdateRequest) (*do.VPCPeering, error) {
 	m.ctrl.T.Helper()

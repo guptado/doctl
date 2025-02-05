@@ -12,6 +12,7 @@ import (
 	"github.com/digitalocean/doctl"
 	"github.com/digitalocean/doctl/commands/displayers"
 	"github.com/digitalocean/doctl/do"
+	"github.com/digitalocean/godo"
 )
 
 // Network creates the partner commands
@@ -70,8 +71,19 @@ With the Partner Interconnect Attachments commands, you can get or list, create,
 
 	cmdPartnerIADelete := CmdBuilder(cmd, RunPartnerInterconnectAttachmentDelete, "delete <interconnect-attachment-id>",
 		"Deletes a Partner Interconnect Attachment", "Deletes information about a Partner Interconnect Attachment. This is irreversible ", Writer,
-		aliasOpt("g"), displayerType(&displayers.PartnerInterconnectAttachment{}))
-	cmdPartnerIADelete.Example = `The following example deletes a Partner Interconnect Attachment with the ID ` + "`" + `f81d4fae-7dec-11d0-a765-00a0c91e6bf6` + "`" + `: doctl partner interconnect-attachment delete f81d4fae-7dec-11d0-a765-00a0c91e6bf6`
+		aliasOpt("rm"), displayerType(&displayers.PartnerInterconnectAttachment{}))
+	cmdPartnerIADelete.Example = `The following example deletes a Partner Interconnect Attachment with the ID ` + "`" + `f81d4fae-7dec-11d0-a765-00a0c91e6bf6` + "`" +
+		`: doctl network --type "partner" interconnect-attachment delete f81d4fae-7dec-11d0-a765-00a0c91e6bf6`
+
+	cmdPartnerIAUpdate := CmdBuilder(cmd, RunPartnerInterconnectAttachmentUpdate, "update <interconnect-attachment-id>",
+		"Update a Partner Interconnect Attachment's name and configuration", `Use this command to update the name and and configuration of a Partner Interconnect Attachment`, Writer, aliasOpt("u"))
+	AddStringFlag(cmdPartnerIAUpdate, doctl.ArgPartnerInterconnectAttachmentName, "", "",
+		"The Partner Interconnect Attachment's name", requiredOpt())
+	AddStringFlag(cmdPartnerIAUpdate, doctl.ArgPartnerInterconnectAttachmentVPCIDs, "", "",
+		"The Partner Interconnect Attachment's vpc ids", requiredOpt())
+	cmdPartnerIAUpdate.Example = `The following example updates the name of a Partner Interconnect Attachment with the ID ` +
+		"`" + `f81d4fae-7dec-11d0-a765-00a0c91e6bf6` + "`" + ` to ` + "`" + `new-name` + "`" +
+		`: doctl network --type "partner" interconnect-attachment update f81d4fae-7dec-11d0-a765-00a0c91e6bf6 --name new-name`
 
 	return cmd
 }
@@ -124,6 +136,42 @@ func RunPartnerInterconnectAttachmentList(c *CmdConfig) error {
 	}
 
 	item := &displayers.PartnerInterconnectAttachment{PartnerInterconnectAttachments: list}
+	return c.Display(item)
+}
+
+// RunPartnerInterconnectAttachmentUpdate updates an existing Partner Interconnect Attachment with new configuration.
+func RunPartnerInterconnectAttachmentUpdate(c *CmdConfig) error {
+	if err := ensurePartnerAttachmentType(c); err != nil {
+		return err
+	}
+
+	err := ensureOneArg(c)
+	if err != nil {
+		return err
+	}
+	peeringID := c.Args[0]
+
+	r := new(godo.PartnerInterconnectAttachmentUpdateRequest)
+	name, err := c.Doit.GetString(c.NS, doctl.ArgPartnerInterconnectAttachmentName)
+	if err != nil {
+		return err
+	}
+	r.Name = name
+
+	vpcIDs, err := c.Doit.GetString(c.NS, doctl.ArgPartnerInterconnectAttachmentVPCIDs)
+	if err != nil {
+		return err
+	}
+	r.VPCIDs = strings.Split(vpcIDs, ",")
+
+	interconnectAttachment, err := c.VPCs().UpdatePartnerInterconnectAttachment(peeringID, r)
+	if err != nil {
+		return err
+	}
+
+	item := &displayers.PartnerInterconnectAttachment{
+		PartnerInterconnectAttachments: do.PartnerInterconnectAttachments{*interconnectAttachment},
+	}
 	return c.Display(item)
 }
 
