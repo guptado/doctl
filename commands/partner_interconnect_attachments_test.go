@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/digitalocean/godo"
@@ -26,7 +27,7 @@ var (
 func TestInterconnectAttachmentsCommand(t *testing.T) {
 	cmd := PartnerInterconnectAttachments()
 	assert.NotNil(t, cmd)
-	assertCommandNames(t, cmd, "get", "list")
+	assertCommandNames(t, cmd, "get", "list", "delete", "update")
 }
 
 func TestInterconnectAttachmentsGet(t *testing.T) {
@@ -57,5 +58,48 @@ func TestInterconnectAttachmentsList(t *testing.T) {
 
 		err := RunPartnerInterconnectAttachmentList(config)
 		assert.NoError(t, err)
+	})
+}
+
+func TestInterconnectAttachmentsDelete(t *testing.T) {
+	withTestClient(t, func(config *CmdConfig, tm *tcMocks) {
+		config.Doit.Set("network", doctl.ArgInterconnectAttachmentType, "partner")
+
+		iaID := "e819b321-a9a1-4078-b437-8e6b8bf13530"
+		tm.vpcs.EXPECT().DeletePartnerInterconnectAttachment(iaID).Return(nil)
+
+		config.Args = append(config.Args, iaID)
+		config.Doit.Set(config.NS, doctl.ArgForce, true)
+
+		err := RunPartnerInterconnectAttachmentDelete(config)
+		assert.NoError(t, err)
+	})
+}
+
+func TestInterconnectAttachmentsUpdate(t *testing.T) {
+	withTestClient(t, func(config *CmdConfig, tm *tcMocks) {
+		config.Doit.Set("network", doctl.ArgInterconnectAttachmentType, "partner")
+
+		iaID := "ia-uuid1"
+		iaName := "ia-name"
+		vpcIDs := "f81d4fae-7dec-11d0-a765-00a0c91e6bf6,3f900b61-30d7-40d8-9711-8c5d6264b268"
+		r := godo.PartnerInterconnectAttachmentUpdateRequest{Name: iaName, VPCIDs: strings.Split(vpcIDs, ",")}
+		tm.vpcs.EXPECT().UpdatePartnerInterconnectAttachment(iaID, &r).Return(&testIA, nil)
+
+		config.Args = append(config.Args, iaID)
+		config.Doit.Set(config.NS, doctl.ArgPartnerInterconnectAttachmentName, iaName)
+		config.Doit.Set(config.NS, doctl.ArgPartnerInterconnectAttachmentVPCIDs, vpcIDs)
+
+		err := RunPartnerInterconnectAttachmentUpdate(config)
+		assert.NoError(t, err)
+	})
+}
+
+func TestInterconnectAttachmentsUpdateNoID(t *testing.T) {
+	withTestClient(t, func(config *CmdConfig, tm *tcMocks) {
+		config.Doit.Set("network", doctl.ArgInterconnectAttachmentType, "partner")
+
+		err := RunPartnerInterconnectAttachmentUpdate(config)
+		assert.Error(t, err)
 	})
 }

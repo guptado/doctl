@@ -59,6 +59,8 @@ type VPCsService interface {
 	ListVPCPeeringsByVPCID(vpcID string) (VPCPeerings, error)
 	GetPartnerInterconnectAttachment(iaID string) (*PartnerInterconnectAttachment, error)
 	ListPartnerInterconnectAttachments() (PartnerInterconnectAttachments, error)
+	DeletePartnerInterconnectAttachment(iaID string) error
+	UpdatePartnerInterconnectAttachment(iaID string, req *godo.PartnerInterconnectAttachmentUpdateRequest) (*PartnerInterconnectAttachment, error)
 }
 
 var _ VPCsService = &vpcsService{}
@@ -267,4 +269,18 @@ func (v *vpcsService) ListPartnerInterconnectAttachments() (PartnerInterconnectA
 	}
 
 	return list, nil
+}
+
+func (v *vpcsService) DeletePartnerInterconnectAttachment(iaID string) error {
+	_, err := v.client.PartnerInterconnectAttachments.Delete(context.TODO(), iaID)
+	return err
+}
+
+func (v *vpcsService) UpdatePartnerInterconnectAttachment(iaID string, req *godo.PartnerInterconnectAttachmentUpdateRequest) (*PartnerInterconnectAttachment, error) {
+	partnerIA, _, err := v.client.PartnerInterconnectAttachments.Update(context.TODO(), iaID, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return &PartnerInterconnectAttachment{PartnerInterconnectAttachment: partnerIA}, nil
 }
